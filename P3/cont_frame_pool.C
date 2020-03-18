@@ -89,7 +89,6 @@
  */
 /*--------------------------------------------------------------------------*/
 
-
 /*--------------------------------------------------------------------------*/
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
@@ -109,7 +108,8 @@
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+//initiate head
+ContFramePool *ContFramePool::head = NULL;
 
 /*--------------------------------------------------------------------------*/
 /* CONSTANTS */
@@ -127,36 +127,245 @@
 /* METHODS FOR CLASS   C o n t F r a m e P o o l */
 /*--------------------------------------------------------------------------*/
 
+//private helper methods
+void ContFramePool::setFrameBitMask(unsigned long _frame, unsigned char val)
+{
+    //get frame location
+    unsigned long ind = _frame / 4;
+    unsigned long offset = 6 - 2 * (_frame % 4);
+
+    //change first bit
+    if ((val >> 1) & 1)
+    {
+        bitmap[ind] |= 1 << (offset + 1);
+    }
+    else
+    {
+        bitmap[ind] &= ~(1 << (offset + 1));
+    }
+
+    //change second bit
+    if (val & 1)
+    {
+        bitmap[ind] |= 1 << offset;
+    }
+    else
+    {
+        bitmap[ind] &= ~(1 << offset);
+    }
+}
+
+void ContFramePool::markContFrameMasks(unsigned long _base, unsigned long _n_frames, unsigned char val)
+{
+    for (int i = _base; i < _base + _n_frames; i++)
+    {
+        setFrameBitMask(i, val);
+    }
+}
+
+bool ContFramePool::frameCompare(unsigned long _frame, unsigned char val)
+{
+    //get value of frame
+    unsigned long ind = _frame / 4;
+    unsigned long offset = 6 - 2 * (_frame % 4);
+    return (((bitmap[ind] >> offset) & 0x03) ^ (val)) == 0;
+}
+
+void ContFramePool::printBitMask()
+{
+
+    Console::puts("bitmask: ");
+    for (int i = 0; i < n_frames; i++)
+    {
+        //get value of frame
+        unsigned long ind = i / 4;
+        unsigned long offset = 6 - 2 * (i % 4);
+
+        //print frame;
+        Console::puts("(");
+        Console::puti((bitmap[ind] >> offset + 1) & 1);
+        Console::puti((bitmap[ind] >> offset) & 1);
+        Console::puts(")");
+    }
+    Console::puts("\n");
+}
+
+//public methods
 ContFramePool::ContFramePool(unsigned long _base_frame_no,
-                             unsigned long _nframes,
+                             unsigned long _n_frames,
                              unsigned long _info_frame_no,
                              unsigned long _n_info_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    //make sure bitmap can fit in a single frame
+    //frame size is 4096 => 4096 bytes/bits * 8 bits gives us total number of frames
+    //one frame can handle, assuming there is two bits per frame (free,allocated,headofsequence) however we need another step:
+    //4096 bytes/bits * 8 bits / 2
+    //now we need to consider the number of info frames
+    if (_info_frame_no == 0 && _n_info_frames == 0)
+        _n_info_frames = needed_info_frames(_n_frames);
+    assert(_n_frames <= FRAME_SIZE * 4 * _n_info_frames);
+
+    base_frame_no = _base_frame_no;
+    n_frames = _n_frames;
+    info_frame_no = _info_frame_no;
+    n_info_frames = _n_info_frames;
+
+    //if Info_frame_no is 0 the frame pool is free to choose
+    //any frames from the pool to store management information
+    if (info_frame_no == 0)
+    {
+        //bitmap is internal so choose first one!
+        bitmap = (unsigned char *)(base_frame_no * FRAME_SIZE);
+    }
+    else
+    {
+        bitmap = (unsigned char *)(info_frame_no * FRAME_SIZE); //bitmap is external!
+    }
+
+    //make sure that number of frames fill the bitmap
+    //(4 (2-bit FrameDescription) per character (8 bits))
+    assert((_n_frames % 4) == 0);
+
+    //mark all bits in bitmap as open
+    markContFrameMasks(0, n_frames, 0b11);
+
+    //mark the first n_info_frames as used if info_frame_no is 0
+    //ex: info_frame_no = 0, and n_info_frames = 3, then the next
+    //3 frames including the first frame will be allocated!
+    //11- FREE, 10-HEAD, 00-ALLOCATED
+    if (info_frame_no == 0)
+    {
+        markContFrameMasks(0, n_info_frames, 0b00);
+    }
+
+    //set head if head is null
+    if (ContFramePool::head == NULL)
+    {
+        ContFramePool::head = this;
+    }
+    else
+    {
+        //insert this right after head
+        next = ContFramePool::head->next;
+        ContFramePool::head->next = this;
+    }
+
+    Console::puts("Frame Pool Initialized\n");
 }
 
 unsigned long ContFramePool::get_frames(unsigned int _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    //make sure input is acceptable
+    assert(_n_frames > 0);
+
+    //keep track of the last head address and count to search for possible address locations
+    unsigned long lastHead = 0;
+    unsigned long count = 0;
+    bool found = false;
+
+    //iterate through the bitmap and search for _n_frames exist contiguously:
+    //bitmap is char array, which is 1 byte per element. So 4 frames are represented
+    //per single character element (8 bits=  4 frames * 2bit)
+    //we need to iterate by 2 bits everytime
+    for (unsigned long i = 0; i < n_frames; i++)
+    {
+
+        //if frame i is free:
+        if (frameCompare(i, 0b11))
+        {
+            count++;
+
+            //check if count reaches desired goal
+            if (count >= _n_frames)
+            {
+                found = true;
+                break;
+            }
+        }
+        //frame i is NOT free:
+        else
+        {
+            //set the head to the next frame
+            lastHead = i + 1;
+            count = 0;
+        }
+    }
+
+    //make sure a frame was found
+    assert(found);
+
+    //mark all the frames as allocated
+    //set head value:
+    setFrameBitMask(lastHead, 0b10);
+
+    //starting at lastHead + 1, iterate and set bits to 00 (allocated)
+    markContFrameMasks(lastHead + 1, _n_frames - 1, 0b00);
+
+    return lastHead + base_frame_no;
 }
 
 void ContFramePool::mark_inaccessible(unsigned long _base_frame_no,
                                       unsigned long _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    //make sure _n_frames is proper
+    assert(_n_frames > 0);
+
+    //start from _base_frame_no and calculate bit map indexing
+    markContFrameMasks(_base_frame_no - base_frame_no, _n_frames, 0b01);
 }
 
 void ContFramePool::release_frames(unsigned long _first_frame_no)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    //iterate through frame pools to find if _first_frame_no is inside a pool
+    ContFramePool *temp = ContFramePool::head;
+    bool found = false;
+    while (temp)
+    {
+
+        //check if frame num is in range
+        if (temp->base_frame_no <= _first_frame_no &&
+            temp->base_frame_no + temp->n_frames > _first_frame_no)
+        {
+            found = true;
+            break;
+        }
+        temp = temp->next;
+    }
+    assert(found);
+
+    //make sure current frame is a head
+    unsigned char *bitmap = temp->bitmap;
+    unsigned long frame_no = _first_frame_no - temp->base_frame_no;
+    assert(temp->frameCompare(frame_no, 0b10));
+
+    //set the head to unallocated (11)
+    temp->setFrameBitMask(frame_no, 0b11);
+
+    //release frame until another head is reached or an unallocated frame is reached
+    unsigned long cur = frame_no + 1;
+    while (cur < temp->n_frames)
+    {
+
+        //check if frame is 00
+        if (temp->frameCompare(cur, 0b00))
+        {
+            //set to free
+            temp->setFrameBitMask(cur, 0b11);
+            cur++;
+        }
+        else
+        {
+            //exit for loop
+            break;
+        }
+    }
 }
 
 unsigned long ContFramePool::needed_info_frames(unsigned long _n_frames)
 {
-    // TODO: IMPLEMENTATION NEEEDED!
-    assert(false);
+    //return the number of frames needed to manage a frame pool of size n_frames
+    //frame size: FRAME_SIZE
+    //bit per frame: 2
+    //bit per byte : 8
+    return _n_frames / (FRAME_SIZE * 4) + (_n_frames % (FRAME_SIZE * 4) > 0 ? 1 : 0); // we are rounding up
 }
