@@ -249,8 +249,6 @@ ContFramePool::ContFramePool(unsigned long _base_frame_no,
         next = ContFramePool::head->next;
         ContFramePool::head->next = this;
     }
-
-    Console::puts("Frame Pool Initialized\n");
 }
 
 unsigned long ContFramePool::get_frames(unsigned int _n_frames)
