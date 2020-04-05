@@ -49,6 +49,34 @@ void abort() {
   for(;;);
 }
 
+/*********************************************************
+ * Debugging
+ *********************************************************/
+
+/* debug_out_E9: output to stdout, using bochs 0xE9 hack, a string (up to the initial 255 characters) */
+void debug_out_E9(char *_string) {
+     int string_size = strlen(_string);
+     if (string_size > 255) {
+          // will print only first 255 characters
+          string_size = 255;
+     }
+     for (int i=0; i < string_size; i++) {
+          outportb(0xE9, _string[i]);
+     }
+}
+
+void debug_out_E9_msg_value(char *msg, unsigned int value) {
+    debug_out_E9(msg);
+    char blank[2] = {' ', 0};
+    debug_out_E9(blank);
+    char localstr[32];
+    uint2str(value, localstr);
+    debug_out_E9(localstr);
+    char nline[2] = {10, 0};
+    debug_out_E9(nline);
+}
+
+
 /*--------------------------------------------------------------------------*/
 /* MEMORY OPERATIONS  */ 
 /*--------------------------------------------------------------------------*/
@@ -100,6 +128,18 @@ void strcpy(char* _dst, char* _src) {
     *_dst = 0;  // put terminating 0 at end.
 }
 
+void strncat ( char* dest, char* src, int num ) {
+    char *d = dest;
+    /* Find the end of destination  */
+    d += strlen (dest);
+    int srcsize = strlen (src);
+    if (srcsize > num) {
+	srcsize = num;
+    }
+    d[srcsize] = '\0';
+    memcpy (d, src, srcsize);
+}
+
 void int2str(int _num, char * _str) {
         /* -- THIS IMPLEMENTATION IS ONE PRETTY BAD HACK. */
         int     i;
@@ -135,8 +175,29 @@ void uint2str(unsigned int _num, char * _str) {
                 *_str++ = temp[i--];
 }
 
+void ulong2hexstr(unsigned long _num, char * _str) {
+        /* -- THIS IS A WORSE HACK AS WELL. */
+        int     i;
+        char    temp[9];
+
+        temp[0] = '\0';
+        for(i = 1; i <= 8; i++)  {
+	    int digit = _num % 16;
+	    if (digit < 10) {
+                temp[i] = digit + '0';
+	    } else {
+		temp[i] = digit - 10 + 'A';
+	    }
+            _num /= 16;
+        }
+	*_str++ = '0';
+	*_str++ = 'x';
+        while( i >= 0 )
+                *_str++ = temp[--i];
+}
+
 /*--------------------------------------------------------------------------*/
-/* POERT I/O OPERATIONS  */ 
+/* PORT I/O OPERATIONS  */ 
 /*--------------------------------------------------------------------------*/
 
 /* We will use this later on for reading from the I/O ports to get data

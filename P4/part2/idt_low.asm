@@ -1,11 +1,10 @@
 ; This is the exception de-multiplexer code.
 ; All low-level exception handling routines do the following:
-;  1. disable interrupts
-;  2. push error code on the stack (if the exception did not already
+;  1. push error code on the stack (if the exception did not already
 ;     do so! (Some exceptions automatically push the error code onto the
 ;     stack.)
-;  3. push the number of the exception onto the stack.
-;  4. call the common interrupt service routine function, which then
+;  2. push the number of the exception onto the stack.
+;  3. call the common interrupt service routine function, which then
 ;     branches back out based on the exception number on the stack.
 ;     (We do this because we don't want to replicate again and again the code 
 ;      to save the processor state.)
@@ -264,7 +263,7 @@ isr_common_stub:
     pop es
     pop ds
     popa
-    add esp, 8	; Ceans up the pushed error code and pushed ISR number
+    add esp, 8	; Cleans up the pushed error code and pushed ISR number
     iret	; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP1
  
 

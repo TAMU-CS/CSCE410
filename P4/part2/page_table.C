@@ -95,3 +95,22 @@ void PageTable::handle_fault(REGS *_r)
    page_table[p2] = (frame_num << 12) | 7;
    Console::puts("handled page fault\n");
 }
+
+bool PageTable::check_address(unsigned long address)
+{
+    // you need to implement this
+    // it returns true if legitimate, false otherwise
+    assert(false);
+    return false; // you need to implement this
+}
+
+void PageTable::register_pool(VMPool * _vm_pool)
+{
+    assert(false);
+    Console::puts("registered VM pool\n");
+}
+
+void PageTable::free_page(unsigned long _page_no) {
+    assert(false);
+    Console::puts("freed page\n");
+}

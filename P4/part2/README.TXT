@@ -1,4 +1,4 @@
-CSCE 410/611/613: MP2 -- README.TXT
+CSCE 410/611/613: MP4 -- README.TXT
 
 This file describes the content of this directory.
 A file marked with (*) may be of some interest to the 
@@ -35,8 +35,12 @@ FILE: 			DESCRIPTION:
 
 start.asm (*)		The bootloader starts code in this file, which in turn
 		  	jumps to the main entry in File "kernel.C".
+
 kernel.C (**)		Main file, where the OS components are set up, and the
                         system gets going.
+			Define or undefine macro _TEST_PAGE_TABLE_ to 
+			test either the page table implementation or the 
+			implementation of the virtual memory allocator.
 
 assert.H/C		Implements the "assert()" utility.
 utils.H/C		Various utilities (e.g. memcpy, strlen, 
@@ -86,6 +90,8 @@ cont_frame_pool.H/C(**) Definition and empty implementation of a
 			 the implementation file give a recipe
 			 of how to implement such a frame pool.
 				 
+vm_pool.H/C(**)		Definition and implementation of a virtual
+			memory pool.
 
 UTILITIES:
 ==========

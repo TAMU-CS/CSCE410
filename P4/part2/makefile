@@ -63,16 +63,18 @@ page_table.o: page_table.C page_table.H paging_low.H
 cont_frame_pool.o: cont_frame_pool.C cont_frame_pool.H
 	$(CPP) $(CPP_OPTIONS) -c -o cont_frame_pool.o cont_frame_pool.C
 
+vm_pool.o: vm_pool.C vm_pool.H
+	$(CPP) $(CPP_OPTIONS) -c -o vm_pool.o vm_pool.C
+
 # ==== KERNEL MAIN FILE =====
 
 kernel.o: kernel.C console.H simple_timer.H page_table.H
 	$(CPP) $(CPP_OPTIONS) -c -o kernel.o kernel.C
 
-
 kernel.bin: start.o utils.o kernel.o assert.o console.o gdt.o idt.o irq.o exceptions.o \
-   interrupts.o simple_timer.o simple_keyboard.o paging_low.o page_table.o cont_frame_pool.o machine.o \
+   interrupts.o simple_timer.o simple_keyboard.o paging_low.o page_table.o cont_frame_pool.o vm_pool.o machine.o \
    machine_low.o 
 	ld -melf_i386 -T linker.ld -o kernel.bin start.o utils.o kernel.o assert.o console.o \
    gdt.o idt.o irq.o exceptions.o \
-   interrupts.o simple_timer.o simple_keyboard.o paging_low.o page_table.o cont_frame_pool.o machine.o \
+   interrupts.o simple_timer.o simple_keyboard.o paging_low.o page_table.o cont_frame_pool.o vm_pool.o machine.o \
    machine_low.o
