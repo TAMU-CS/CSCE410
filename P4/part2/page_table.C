@@ -72,6 +72,11 @@ void PageTable::handle_fault(REGS *_r)
     unsigned long p1 = access_addr >> 22;
     unsigned long p2 = (access_addr & 0x003FFFFF) >> 12;
 
+    if (current_page_table->check_address(access_addr))
+    {
+        return;
+    }
+
     if (!(page_directory[p1] & 1))
     {
         // allocate frame for page table
@@ -98,15 +103,24 @@ void PageTable::handle_fault(REGS *_r)
 
 bool PageTable::check_address(unsigned long address)
 {
-    // you need to implement this
-    // it returns true if legitimate, false otherwise
-    assert(false);
-    return false; // you need to implement this
+    VMPool *cur = head;
+
+    while (cur != NULL)
+    {
+        if (cur->is_legitimate(address))
+        {
+            return true;
+        }
+
+        cur = cur->next;
+    }
+
+    return false;
 }
 
 void PageTable::register_pool(VMPool *_vm_pool)
 {
-    if (head != nullptr)
+    if (head != NULL)
     {
         _vm_pool->next = head;
     }
