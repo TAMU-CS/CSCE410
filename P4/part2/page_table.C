@@ -22,6 +22,8 @@ void PageTable::init_paging(ContFramePool *_kernel_mem_pool,
 
 PageTable::PageTable()
 {
+    head = NULL;
+
     // page directory frame allocation
     unsigned int pd_frame_num = (unsigned int)kernel_mem_pool->get_frames(1);
     page_directory = (unsigned long *)(pd_frame_num * PAGE_SIZE);
@@ -72,9 +74,9 @@ void PageTable::handle_fault(REGS *_r)
     unsigned long p1 = access_addr >> 22;
     unsigned long p2 = (access_addr & 0x003FFFFF) >> 12;
 
-    if (current_page_table->check_address(access_addr))
+    if (!current_page_table->check_address(access_addr))
     {
-        return;
+        abort();
     }
 
     if (!(page_directory[p1] & 1))
@@ -120,6 +122,7 @@ bool PageTable::check_address(unsigned long address)
 
 void PageTable::register_pool(VMPool *_vm_pool)
 {
+
     if (head != NULL)
     {
         _vm_pool->next = head;
@@ -131,6 +134,27 @@ void PageTable::register_pool(VMPool *_vm_pool)
 
 void PageTable::free_page(unsigned long _page_no)
 {
-    assert(false);
-    Console::puts("freed page\n");
+    unsigned long *page_directory = current_page_table->page_directory;
+    unsigned long p1 = _page_no >> 22;
+    unsigned long p2 = (_page_no & 0x003FFFFF) >> 12;
+
+    // if page is valid the page table releases the frame and marks the page invalid
+    VMPool *cur = head;
+
+    while (cur != NULL)
+    {
+        if (cur->is_legitimate(_page_no))
+        {
+            unsigned long *page_table = (unsigned long *)page_directory[p1];
+            cur->release(page_table[p2]);
+
+            // 6: ...110 |supervisor|r/w|present|
+            page_table[p2] = 6;
+
+            Console::puts("freed page\n");
+            return;
+        }
+
+        cur = cur->next;
+    }
 }
