@@ -76,6 +76,13 @@ void PageTable::handle_fault(REGS *_r)
 
     if (!current_page_table->check_address(access_addr))
     {
+        Console::puts("check_address failed for address: ");
+        Console::putui(access_addr);
+        Console::puts(" (this in hexa ");
+        char hexastr[9];
+        ulong2hexstr(access_addr, hexastr);
+        Console::puts(hexastr);
+        Console::puts(")\n");
         abort();
     }
 
