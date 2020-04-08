@@ -124,7 +124,8 @@ bool PageTable::check_address(unsigned long address)
         cur = cur->next;
     }
 
-    return false;
+    return true; // This needs to be changed to false for P 4.3 in the future
+    // return false;
 }
 
 void PageTable::register_pool(VMPool *_vm_pool)
@@ -157,6 +158,9 @@ void PageTable::free_page(unsigned long _page_no)
 
             // 6: ...110 |supervisor|r/w|present|
             page_table[p2] = 6;
+
+            // flush TLB
+            write_cr3((unsigned long)page_directory);
 
             Console::puts("freed page\n");
             return;
