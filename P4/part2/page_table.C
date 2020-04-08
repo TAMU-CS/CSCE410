@@ -124,8 +124,7 @@ bool PageTable::check_address(unsigned long address)
         cur = cur->next;
     }
 
-    return true; // This needs to be changed to false for P 4.3 in the future
-    // return false;
+    return false;
 }
 
 void PageTable::register_pool(VMPool *_vm_pool)
@@ -152,25 +151,11 @@ void PageTable::free_page(unsigned long _page_no)
         return;
     }
 
-    // if page is valid the page table releases the frame and marks the page invalid
-    VMPool *cur = head;
+    process_mem_pool->release_frames(page_table[p2] >> 12);
 
-    while (cur != NULL)
-    {
-        if (cur->is_legitimate(_page_no))
-        {
-            cur->release(page_table[p2]);
+    // 6: ...110 |supervisor|r/w|present|
+    page_table[p2] = 6;
 
-            // 6: ...110 |supervisor|r/w|present|
-            page_table[p2] = 6;
-
-            // flush TLB
-            write_cr3((unsigned long)page_directory);
-
-            Console::puts("freed page\n");
-            return;
-        }
-
-        cur = cur->next;
-    }
+    // flush TLB
+    write_cr3((unsigned long)page_directory);
 }
