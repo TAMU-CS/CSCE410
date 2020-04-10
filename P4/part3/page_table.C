@@ -146,15 +146,14 @@ void PageTable::free_page(unsigned long _page_no)
     unsigned long p2 = (_page_no & 0x003FFFFF) >> 12;
 
     unsigned long *page_table = (unsigned long *)page_directory[p1];
-    if (!page_table[p2] & 1)
+
+    if (page_table[p2] & 1)
     {
-        return;
+        process_mem_pool->release_frames(page_table[p2] >> 12);
     }
 
-    process_mem_pool->release_frames(page_table[p2] >> 12);
-
-    // 6: ...110 |supervisor|r/w|present|
-    page_table[p2] = 6;
+    // mark page as not present
+    page_table[p2] &= 0xFFFFFFFE;
 
     // flush TLB
     write_cr3((unsigned long)page_directory);

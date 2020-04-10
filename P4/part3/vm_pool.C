@@ -80,6 +80,7 @@ VMPool::VMPool(unsigned long _base_address,
                ContFramePool *_frame_pool,
                PageTable *_page_table)
 {
+    base_address = _base_address;
     size = _size / Machine::PAGE_SIZE;
     page_table = _page_table;
     frame_pool = _frame_pool;
@@ -166,6 +167,11 @@ void VMPool::release(unsigned long _start_address)
 bool VMPool::is_legitimate(unsigned long _address)
 {
     Console::puts("Checked whether address is part of an allocated region.\n");
+
+    if (_address == base_address)
+    { // first frame is legit by default
+        return true;
+    }
 
     for (int i = 0; i < MAX_REGION_LIST_SIZE; i++)
     { // for all regions:
