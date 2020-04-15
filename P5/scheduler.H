@@ -13,13 +13,13 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
-
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
 /*--------------------------------------------------------------------------*/
 
 #include "thread.H"
+
+class Queue;
 
 /*--------------------------------------------------------------------------*/
 /* !!! IMPLEMENTATION HINT !!! */
@@ -54,12 +54,13 @@
 /* SCHEDULER */
 /*--------------------------------------------------------------------------*/
 
-class Scheduler {
+class Scheduler
+{
+private:
+   Queue ready;
+   Thread *running;
 
-  /* The scheduler may need private members... */
-  
 public:
-
    Scheduler();
    /* Setup the scheduler. This sets up the ready queue, for example.
       If the scheduler implements some sort of round-robin scheme, then the 
@@ -67,30 +68,27 @@ public:
 
    /* NOTE: We are making all functions virtual. This may come in handy when
             you want to derive RRScheduler from this class. */
-  
+
    virtual void yield();
    /* Called by the currently running thread in order to give up the CPU. 
       The scheduler selects the next thread from the ready queue to load onto 
       the CPU, and calls the dispatcher function defined in 'Thread.H' to
       do the context switch. */
 
-   virtual void resume(Thread * _thread);
+   virtual void resume(Thread *_thread);
    /* Add the given thread to the ready queue of the scheduler. This is called
       for threads that were waiting for an event to happen, or that have 
       to give up the CPU in response to a preemption. */
 
-   virtual void add(Thread * _thread);
+   virtual void add(Thread *_thread);
    /* Make the given thread runnable by the scheduler. This function is called
       after thread creation. Depending on implementation, this function may 
       just add the thread to the ready queue, using 'resume'. */
 
-   virtual void terminate(Thread * _thread);
+   virtual void terminate(Thread *_thread);
    /* Remove the given thread from the scheduler in preparation for destruction
       of the thread. 
       Graciously handle the case where the thread wants to terminate itself.*/
-  
 };
-	
-	
 
 #endif
