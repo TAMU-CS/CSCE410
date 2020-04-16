@@ -359,6 +359,7 @@ int main()
     Thread::dispatch_to(thread1);
 
     /* -- AND ALL THE REST SHOULD FOLLOW ... */
+    for(;;)
 
     assert(false); /* WE SHOULD NEVER REACH THIS POINT. */
 

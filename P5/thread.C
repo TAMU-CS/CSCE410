@@ -77,10 +77,9 @@ static void thread_shutdown()
        This is a bit complicated because the thread termination interacts with the scheduler.
      */
 
-    // releasing memory
+    Console::puts("terminating thread\n");
 
     // giving control to next thread
-    Console::puts("terminating thread\n");
     SYSTEM_SCHEDULER->terminate(Thread::CurrentThread());
 }
 
@@ -219,4 +218,10 @@ Thread *Thread::CurrentThread()
 {
     /* Return the currently running thread. */
     return current_thread;
+}
+
+Thread::~Thread()
+{
+    delete esp;
+    delete cargo;
 }
