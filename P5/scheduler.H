@@ -18,8 +18,92 @@
 /*--------------------------------------------------------------------------*/
 
 #include "thread.H"
+#include "console.H"
+#include "utils.H"
 
-class Queue;
+struct Node
+{
+   Thread *thread;
+   Node *next;
+   Node *prev;
+};
+
+class Queue
+{
+   int length;
+   Node *head;
+   Node *tail;
+
+public:
+   Queue()
+   {
+      head = new Node;
+      tail = new Node;
+      head->next = tail;
+      tail->prev = head;
+      length = 0;
+   }
+
+   void push(Thread *thread)
+   {
+      Console::puts("pushing thread:\n");
+      length++;
+
+      Node *temp = new Node;
+      temp->thread = thread;
+
+      temp->next = tail;
+      temp->prev = tail->prev;
+
+      tail->prev->next = temp;
+      tail->prev = temp;
+   }
+
+   Thread *pop()
+   {
+      length--;
+
+      Node *temp = head->next;
+      head->next = temp->next;
+      temp->next->prev = head;
+
+      return temp->thread;
+   }
+
+   void delete_thread(Thread *thread)
+   {
+      Node *temp = head->next;
+      while (temp != tail)
+      {
+         if (temp->thread == thread)
+         {
+            temp->prev->next = temp->next;
+            temp->next->prev = temp->prev;
+            delete temp;
+            return;
+         }
+
+         temp = temp->next;
+      }
+   }
+
+   int size()
+   {
+      return length;
+   }
+
+   void print()
+   {
+      Node *temp = head->next;
+      Console::puts("queue: ");
+      while (temp != tail)
+      {
+         Console::putui((unsigned int)temp);
+         temp = temp->next;
+      }
+      Console::puts("\n");
+   }
+};
 
 /*--------------------------------------------------------------------------*/
 /* !!! IMPLEMENTATION HINT !!! */
@@ -58,7 +142,6 @@ class Scheduler
 {
 private:
    Queue ready;
-   Thread *running;
 
 public:
    Scheduler();
