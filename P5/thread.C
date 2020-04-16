@@ -77,14 +77,11 @@ static void thread_shutdown()
        This is a bit complicated because the thread termination interacts with the scheduler.
      */
 
-    // releasing CPU
     // releasing memory
+
     // giving control to next thread
     Console::puts("terminating thread\n");
     SYSTEM_SCHEDULER->terminate(Thread::CurrentThread());
-    /* Let's not worry about it for now. 
-       This means that we should have non-terminating thread functions. 
-    */
 }
 
 static void thread_start()

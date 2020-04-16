@@ -55,6 +55,10 @@ void Scheduler::yield()
   {
     first = ready.pop();
   }
+  else
+  {
+    Console::puts("ready queue is empty!\n");
+  }
 
   Thread::dispatch_to(first);
 }
@@ -71,12 +75,5 @@ void Scheduler::add(Thread *_thread)
 
 void Scheduler::terminate(Thread *_thread)
 {
-  if (Thread::CurrentThread() == _thread)
-  {
-    yield();
-  }
-  else
-  {
-    ready.delete_thread(_thread);
-  }
+  yield();
 }
