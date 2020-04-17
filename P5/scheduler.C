@@ -50,6 +50,7 @@ Scheduler::Scheduler()
 
 void Scheduler::yield()
 {
+  Machine::disable_interrupts();
   Thread *first = NULL;
   if (ready.size() > 0)
   {
@@ -61,12 +62,15 @@ void Scheduler::yield()
     return;
   }
 
+  Machine::enable_interrupts();
   Thread::dispatch_to(first);
 }
 
 void Scheduler::resume(Thread *_thread)
 {
+  Machine::disable_interrupts();
   ready.push(_thread);
+  Machine::enable_interrupts();
 }
 
 void Scheduler::add(Thread *_thread)
@@ -76,6 +80,16 @@ void Scheduler::add(Thread *_thread)
 
 void Scheduler::terminate(Thread *_thread)
 {
+  Machine::disable_interrupts();
+
+  if (_thread != Thread::CurrentThread())
+  { // terminating a thread that is not currently running
+
+    // attempt to remove it from the ready queue
+    ready.delete_thread(_thread);
+  }
+
   delete _thread;
+  Machine::enable_interrupts();
   yield();
 }

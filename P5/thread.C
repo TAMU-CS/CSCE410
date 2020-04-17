@@ -88,6 +88,7 @@ static void thread_start()
     /* This function is used to release the thread for execution in the ready queue. */
 
     /* We need to add code, but it is probably nothing more than enabling interrupts. */
+    Machine::enable_interrupts();
 }
 
 void Thread::setup_context(Thread_Function _tfunction)
